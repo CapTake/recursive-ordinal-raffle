@@ -1,3 +1,11 @@
+const numWinners = 10;
+const totalTickets = 100;
+const id = Number(document.querySelector("script[c]").getAttribute("c") || 0);
+let b = document.body;
+if (!b) {
+	b = document.createElement("body");
+    document.documentElement.appendChild(b);
+}
 function MT(seed) {
 	const N = 624;
 	const M = 397;
@@ -101,13 +109,14 @@ const xOfy = (x, y, seed) => {
     all.sort(() => random() - 0.5);
     return all.slice(0, x);
 }
+
 const good = [
     "💎",
-	"🌟",
-	"🔔",
-	"🎁",
+    "🌟",
+    "🔔",
+    "🎁",
 ];
-
+const bad = "❌️";
 // map winning number based on it's place, to emoji place >= 0
 const moji = (place, winningPlaces = 1) => {
     const mod = good.length;
@@ -117,11 +126,74 @@ const moji = (place, winningPlaces = 1) => {
     n = Math.floor(n / mod);
     res.push(good[n % mod]);
     if (place >= winningPlaces) {
-        res[place % 3] = "❌️";
+        res[place % 3] = bad;
     }
     return res.reverse();
 }
-
-const winners = xOfy(100, 100, 123456);
-const res = winners.map((n, i) => [n, moji(i, 10)]);
+const seed = 123456;
+// ticket id
+const scratch = (ticketNumber, totalTickets, seed) => {
+    const { random } = MT(seed);
+    const all = [];
+    for(let i = 1; i <= totalTickets; i++) {
+        all.push(i);
+    }
+    all.sort(() => random() - 0.5);
+    console.log(ticketNumber, all.indexOf(ticketNumber));
+    return moji(all.indexOf(ticketNumber), numWinners);
+}
+const winners = xOfy(totalTickets, totalTickets, seed);
+const res = winners.map((n, i) => [n, moji(i, numWinners)]);
 console.table(res);
+const combo = scratch(id, totalTickets, seed);
+console.log(`Raffle ticket: ${id}`);
+b.innerHTML = `<style>
+.flex { display: flex; justify-content: center; align-items: center;}
+.w-full { width: 100%;}
+body {
+display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0px; padding: 0px; background: #000; min-height: 100%; color:#fff;
+background: #000;
+}
+body:empty{display:none}
+#h1 { text-decoration: none; color: #fff; font-size: 5vmin; font-family: sans-serif; padding: 3vmin; transition:all .3s ease;}
+footer {padding: 5vmin; font-size: 3vmin;}
+#items { font-size:10vmin; gap: 1vmin;}
+#items div{ width: 20%; padding: 3.5vmin 0; text-align: center; border: 1vmin dashed #000; background: #fff;}
+</style>
+<div class="flex" style="width: 100vmin; height: 100vmin; flex-direction: column; justify-content: space-between;">
+<h1 id="h1">Ticket #${id}</h1>
+<div id="wizzardo" class="flex w-full">
+    <div id="items" class="flex w-full">
+        <div>❓️</div>
+        <div>❓️</div>
+        <div>❓️</div>
+    </div>
+    </div>
+<footer>
+raffles.xyz
+</footer>
+</div>
+`;
+const items = document.querySelector('#items');
+const delay = 50;
+const symbs = [...good, bad, ...good];
+let times = 120;
+let reel = 0;
+const reveal = () => {
+    const i = times % good.length;
+    if (times > 0 && delay > 0 && reel < 3) {
+        times--;
+        if (times === 0) {
+            reel++;
+            times = 100;
+        }
+        const a = reel > 0 ? combo[0] : symbs[i];
+        const b = reel > 1 ? combo[1] : symbs[i + 1];
+        const c = reel > 2 ? combo[2] : symbs[i + 2];
+        items.innerHTML = `<div>${a}</div><div>${b}</div><div>${c}</div>`;
+        setTimeout(reveal, delay);
+    } else {
+        items.innerHTML = `<div>${combo[0]}</div><div>${combo[1]}</div><div>${combo[2]}</div>`;
+    }
+}
+reveal();
